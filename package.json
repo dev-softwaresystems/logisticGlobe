@@ -1,13 +1,46 @@
 {
-  "name": "logisticGlobe",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "name": "logistics-globe",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LogisticsGlobe — Software Systems",
+  "packageManager": "pnpm@10.24.0",
+  "engines": {
+    "node": ">=24.0.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.24.0"
+  "scripts": {
+    "setup:local": "node scripts/setup-local.mjs",
+    "dev": "pnpm db:generate && pnpm --parallel --filter @logistics-globe/api --filter @logistics-globe/web dev",
+    "build": "pnpm db:generate && pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm db:generate && pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @logistics-globe/api test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "db:generate": "pnpm --filter @logistics-globe/api db:generate",
+    "db:migrate": "pnpm --filter @logistics-globe/api db:migrate",
+    "db:seed": "pnpm --filter @logistics-globe/api db:seed",
+    "app:down": "docker compose -f docker-compose.yml -f docker-compose.application.yml stop api web",
+    "app:migrate": "docker compose -f docker-compose.yml -f docker-compose.application.yml run --rm migrate",
+    "ops:restore:verify": "node scripts/restore-verify.mjs",
+    "test:browser": "pnpm --filter @logistics-globe/api test:browser",
+    "gps:forward": "node scripts/gps-forwarder.mjs",
+    "ops:backup": "node scripts/backup.mjs",
+    "test:load": "node scripts/load-test.mjs",
+    "app:build": "node scripts/build-containers.mjs",
+    "app:up": "docker compose -f docker-compose.yml -f docker-compose.application.yml up -d"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.9"
+  },
+  "pnpm": {
+    "overrides": {
+      "@prisma/config>deepmerge-ts": "^8.0.0",
+      "prisma>mysql2": "^3.23.1",
+      "@nestjs/platform-socket.io>socket.io": "4.8.4"
+    }
+  }
 }

@@ -1,0 +1,19 @@
+# ADR 006 — Consistencia operativa y tiempo real
+
+Estado: aceptado para el MVP local modular.
+
+PostgreSQL conserva usuarios, permisos, envíos, historial de estados, vehículos, almacenes, inventario y alertas. Las transiciones son PENDING → IN_TRANSIT/CANCELLED e IN_TRANSIT → DELIVERED/CANCELLED. No se reabren estados terminales. Iniciar tránsito exige un vehículo fuera de mantenimiento; se libera al terminar su último envío activo. Las transacciones Serializable se reintentan hasta tres veces y devuelven 409 ante cambios concurrentes no recuperables.
+
+Crear un envío es idempotente por referencia: el mismo contenido devuelve el registro existente; un contenido distinto devuelve 409. Los ajustes requieren expectedUpdatedAt y un motivo. El cliente mantiene la versión al abrir el formulario; una actualización recibida durante la edición no autoriza sobrescribirla. Cada ajuste registra cantidad anterior/nueva y actor. Las alertas se abren al quedar por debajo del mínimo y se resuelven al alcanzar el mínimo. Todas las escrituras operativas deben pasar por estos casos de uso; las escrituras SQL externas no disparan reglas de negocio.
+
+El evento y el cambio transaccional se guardan juntos en un outbox PostgreSQL. El actor se conserva como metadato interno, fuera del payload público. El dispatcher publica mediante EventBus y marca entrega; reintenta fallos. La entrega puede repetirse si el proceso cae después de publicar y antes de marcar. El adaptador local usa un solo dispatcher: antes de escalar hacen falta leasing/locks entre workers, consumidores idempotentes y retención del outbox. SQS/SNS sustituiría el adaptador, sin importar SDK AWS desde dominios.
+
+MongoDB es la fuente de verdad de vehicle_telemetry y el histórico de posiciones. El índice compuesto vehicleId/observedAt/_id soporta últimos puntos e histórico paginado. La observación tiene UUID idempotente, coordenadas validadas y fechas normalizadas en UTC; se rechazan fechas futuras superiores a un minuto. Una observación repetida con distinto contenido devuelve 409.
+
+Redis mantiene solo una copia efímera de la última posición, con TTL de 5 segundos. Una operación Lua estándar compara fecha e ID antes de sustituirla; las observaciones tardías no retroceden la posición. Tras guardar en MongoDB se lee el último punto durable para llenar el caché. Si Redis falla se consulta MongoDB. No existe una transacción distribuida: si falla la notificación GPS, el polling recupera los datos durables. Si MongoDB no responde, el mapa presenta error de telemetría y el catálogo transaccional sigue disponible.
+
+Socket.IO usa el namespace /operations y eventos tipados, sin entidades ni actores completos. El handshake exige access JWT válido, sesión activa, rol permitido y origen WEB_ORIGIN. Se comprueban sesión y roles antes de cada evento y cada 30 segundos en inactividad. El cliente renueva el acceso, reconecta, vuelve a consultar HTTP y agrupa invalidaciones. Las posiciones actualizan exclusivamente la caché TanStack Query, respetando orden temporal; no hay otra copia del server state.
+
+Leaflet está detrás de FleetMapAdapter y se carga bajo demanda. Sin VITE_MAP_TILE_URL usa un proveedor local de coordenadas; con un endpoint HTTPS XYZ aprobado y atribución se pueden añadir tiles. La lista GPS es la alternativa accesible al mapa. No se incrustan secretos ni se elige automáticamente un proveedor comercial.
+
+Referencias primarias: [NestJS Gateways](https://docs.nestjs.com/websockets/gateways), [Socket.IO TypeScript](https://socket.io/docs/v4/typescript), [Leaflet](https://leafletjs.com/reference).

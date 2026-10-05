@@ -1,31 +1,47 @@
 services:
-
   postgres:
     image: postgres:16
     container_name: logistics-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: logistics
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-logistics}
     ports:
-      - "5432:5432"
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 5
   mongodb:
     image: mongo:7
     container_name: logistics-mongodb
     ports:
-      - "27017:27017"
+      - '127.0.0.1:${MONGODB_PORT:-27017}:27017'
     volumes:
       - mongo_data:/data/db
-
+    healthcheck:
+      test:
+        ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis:
     image: redis:7
     container_name: logistics-redis
+    command: ['redis-server', '--appendonly', 'yes']
     ports:
-      - "6379:6379"
-
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 volumes:
   postgres_data:
   mongo_data:
+  redis_data:

@@ -1,18 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { InventoryController } from './inventory.controller.js';
-
+import { InventoryService } from './inventory.service.js';
+import { AccessGuard } from '../auth/access.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
 describe('InventoryController', () => {
-  let controller: InventoryController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+  it('resolves behind authentication and role guards', async () => {
+    const module = await Test.createTestingModule({
       controllers: [InventoryController],
-    }).compile();
-
-    controller = module.get<InventoryController>(InventoryController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+      providers: [{ provide: InventoryService, useValue: {} }],
+    })
+      .overrideGuard(AccessGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+    expect(module.get(InventoryController)).toBeDefined();
   });
 });

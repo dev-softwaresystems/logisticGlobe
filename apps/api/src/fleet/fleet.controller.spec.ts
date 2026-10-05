@@ -1,18 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { FleetController } from './fleet.controller.js';
-
+import { FleetService } from './fleet.service.js';
+import { AccessGuard } from '../auth/access.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
 describe('FleetController', () => {
-  let controller: FleetController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+  it('resolves behind authentication and role guards', async () => {
+    const module = await Test.createTestingModule({
       controllers: [FleetController],
-    }).compile();
-
-    controller = module.get<FleetController>(FleetController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+      providers: [{ provide: FleetService, useValue: {} }],
+    })
+      .overrideGuard(AccessGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+    expect(module.get(FleetController)).toBeDefined();
   });
 });

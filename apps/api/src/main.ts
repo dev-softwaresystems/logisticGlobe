@@ -1,10 +1,18 @@
+import { ConsoleLogger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { AppModule, ObserveInstrument } from './app.module.js';
-
-async function bootstrap() {
+import { AppModule } from './app.module.js';
+import { configureApp } from './config/configure-app.js';
+import type { RuntimeEnvironment } from './config/environment.js';
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
-    instrument: ObserveInstrument,
+    logger: new ConsoleLogger({ json: true }),
   });
-  await app.listen(process.env.PORT ?? 3000);
+  configureApp(app);
+  await app.listen(
+    app
+      .get(ConfigService<RuntimeEnvironment, true>)
+      .get('PORT', { infer: true }),
+  );
 }
 await bootstrap();

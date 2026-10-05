@@ -31,3 +31,7 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+# Generated Prisma client
+apps/api/src/generated/
+# Local browser artifacts
+artifacts/

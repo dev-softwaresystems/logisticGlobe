@@ -1,0 +1,66 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    env_file:
+      - path: apps/api/.env.local
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      WEB_ORIGIN: ${APP_WEB_ORIGIN:-http://localhost:8080}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-logistics}
+      MONGODB_URI: mongodb://mongodb:27017/${POSTGRES_DB:-logistics}
+      REDIS_URL: redis://redis:6379
+      DISTRIBUTED_REALTIME: 'true'
+      DISTRIBUTED_RATE_LIMIT: 'true'
+      TRUST_PROXY_HOPS: 1
+      SEED_ADMIN_PASSWORD: ''
+    depends_on:
+      postgres: { condition: service_healthy }
+      mongodb: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    read_only: true
+    tmpfs: ['/tmp']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        VITE_MAP_TILE_URL: ${VITE_MAP_TILE_URL:-}
+        VITE_MAP_ATTRIBUTION: ${VITE_MAP_ATTRIBUTION:-}
+    depends_on:
+      api: { condition: service_healthy }
+    ports: ['127.0.0.1:${APP_WEB_PORT:-8080}:8080']
+    read_only: true
+    tmpfs: ['/tmp', '/var/cache/nginx:uid=101,gid=101,mode=0700']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: unless-stopped
+  migrate:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+      target: build
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-logistics}
+    working_dir: /workspace
+    command:
+      [
+        'pnpm',
+        '--filter',
+        '@logistics-globe/api',
+        'exec',
+        'prisma',
+        'migrate',
+        'deploy',
+      ]
+    depends_on:
+      postgres: { condition: service_healthy }

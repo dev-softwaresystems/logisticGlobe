@@ -1,0 +1,60 @@
+name: Quality
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: logistics_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d logistics_test"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      mongodb:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/logistics_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/logistics_test
+      MONGODB_URI: mongodb://localhost:27017/logistics_test
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@a8198c4bff370c8506180b035930dea56dbd5288 # v5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm --filter @logistics-globe/api exec prisma migrate deploy
+      - run: pnpm test:e2e
+      - run: pnpm --filter @logistics-globe/api exec playwright install --with-deps chromium
+      - run: pnpm test:browser
+      - run: pnpm audit --prod --audit-level=high
+      - run: docker compose config --quiet
+      - run: docker compose -f docker-compose.yml -f docker-compose.application.yml config --quiet
+      - run: pnpm app:build
