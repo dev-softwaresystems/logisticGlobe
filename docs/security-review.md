@@ -17,3 +17,9 @@ Revisión interna del código y pruebas locales; no equivale a una auditoría in
 Antes de abrir tráfico real: aprobar TLS, proveedores y tratamiento de GPS; implementar autenticación/TLS de bases y Redis privados; separar privilegios SQL, otorgar ADMIN con revisión; decidir SSO/MFA si la política corporativa lo exige; probar límites bajo carga y revisión independiente OWASP. Los secretos de ejemplo no sirven en producción y no se envían al frontend.
 
 No se implementa multi-tenant ni funciones ajenas al MVP. No se cambia una contraseña existente mediante seed ni se agrega recuperación por email sin un flujo de identidad aprobado.
+
+## Cierre local del 2026-10-07
+
+Se amplió la evaluación interna con reportes, importaciones, planes, GPS y reconciliación entre motores. Consulte [amenazas](security/threat-model.md), [datos y retención](security/data-treatment-and-retention.md) y [licencias](security/dependency-license-review.md). Audit npm productivo: cero vulnerabilidades conocidas. SBOM de npm e imágenes finales generados; el scan CVE de imágenes requiere login Docker Scout y quedó bloqueado. No equivale a una auditoría independiente.
+
+El paquete usa allowlist y hash por archivo; excluye secretos, backups y documentos originales. Cifrado GnuPG probado con material demo y clave efímera. La entrega real, custodia, política de retención, TLS, privilegios productivos y garantías de licencia permanecen pendientes de autoridades.

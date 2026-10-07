@@ -323,6 +323,81 @@ describe('Administration, integrations and two API replicas', () => {
     for (const spy of spies) spy.mockRestore();
   });
 
+  it('recovers expired claims and retries publication failure with at-least-once identity', async () => {
+    for (const app of apps) app.get(OutboxDispatcher).onModuleDestroy();
+    const event: LogisticsEvent = {
+      id: randomUUID(),
+      name: 'fleet.vehicle.updated',
+      occurredAt: new Date().toISOString(),
+      payload: { vehicleId, status: 'AVAILABLE' },
+    };
+    events.push(event.id);
+    await prisma.outboxEvent.create({
+      data: {
+        id: event.id,
+        body: JSON.parse(JSON.stringify(event)),
+        leaseOwner: 'crashed-fixture',
+        leaseUntil: new Date(Date.now() - 1000),
+      },
+    });
+    const bus = apps[0].get(LocalEventBus),
+      spy = vi
+        .spyOn(bus, 'publish')
+        .mockRejectedValueOnce(new Error('Injected publish failure'));
+    await apps[0].get(OutboxDispatcher).flush();
+    expect(
+      (await prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } }))
+        .deliveredAt,
+    ).toBeNull();
+    spy.mockRestore();
+    await apps[1].get(OutboxDispatcher).flush();
+    expect(
+      (await prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } }))
+        .deliveredAt,
+    ).not.toBeNull();
+    const afterPublish = { ...event, id: randomUUID() };
+    events.push(afterPublish.id);
+    await prisma.outboxEvent.create({
+      data: {
+        id: afterPublish.id,
+        body: JSON.parse(JSON.stringify(afterPublish)),
+      },
+    });
+    const confirmation = vi
+      .spyOn(apps[0].get(PrismaService).outboxEvent, 'updateMany')
+      .mockRejectedValueOnce(new Error('Injected confirmation failure'));
+    const publications = apps.map((app) =>
+      vi.spyOn(app.get(LocalEventBus), 'publish'),
+    );
+    try {
+      await apps[0].get(OutboxDispatcher).flush();
+      expect(
+        (
+          await prisma.outboxEvent.findUniqueOrThrow({
+            where: { id: afterPublish.id },
+          })
+        ).deliveredAt,
+      ).toBeNull();
+      confirmation.mockRestore();
+      await apps[1].get(OutboxDispatcher).flush();
+      expect(
+        (
+          await prisma.outboxEvent.findUniqueOrThrow({
+            where: { id: afterPublish.id },
+          })
+        ).deliveredAt,
+      ).not.toBeNull();
+      expect(
+        publications
+          .flatMap((s) => s.mock.calls)
+          .filter(([incoming]) => incoming.id === afterPublish.id),
+      ).toHaveLength(2);
+    } finally {
+      confirmation.mockRestore();
+      for (const s of publications) s.mockRestore();
+    }
+    for (const app of apps) app.get(OutboxDispatcher).onModuleInit();
+  });
   it('forwards NDJSON GPS through the adapter and executes a paced HTTP load probe', async () => {
     const base = (await apps[0].getUrl()) + '/api/v1';
     const observation = {

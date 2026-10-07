@@ -63,3 +63,7 @@ Routing devuelve provider, distanceMeters, durationSeconds, coordinates [longitu
 El historial de usuarios registra creación y cambios de roles/actividad. No existe endpoint de eliminación ni cambios de contraseñas existentes. El último ADMIN activo no puede desactivarse ni perder el rol. Los controles requieren versión vigente; la UI recibe 409 ante conflicto.
 
 Con DISTRIBUTED_REALTIME y DISTRIBUTED_RATE_LIMIT las réplicas utilizan Redis y leasing de outbox. Los consumidores deben deduplicar UUID y recuperar datos por HTTP ante reconexión; pub/sub no almacena mensajes para clientes desconectados.
+
+## Endpoints del cierre local
+
+Contrato, permisos, filtros, eventos y límites actualizados en [cierre local](closure.md). Las rutas y DTOs están documentadas también por Swagger en desarrollo.

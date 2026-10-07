@@ -17,6 +17,8 @@ import type { RuntimeEnvironment } from '../../config/environment.js';
 import { OsrmAdapter } from './osrm.adapter.js';
 import { RouteDto } from './routing.dto.js';
 import { ROUTING_PROVIDER, RoutingService } from './routing.service.js';
+import { MonitoringService } from './monitoring.service.js';
+import { MonitoringController } from './monitoring.controller.js';
 @ApiTags('routing')
 @ApiBearerAuth()
 @Controller('routing')
@@ -34,9 +36,11 @@ class RoutingController {
 }
 @Module({
   imports: [AuthModule],
-  controllers: [RoutingController],
+  controllers: [RoutingController, MonitoringController],
+  exports: [RoutingService, MonitoringService],
   providers: [
     RoutingService,
+    MonitoringService,
     {
       provide: ROUTING_PROVIDER,
       inject: [ConfigService],

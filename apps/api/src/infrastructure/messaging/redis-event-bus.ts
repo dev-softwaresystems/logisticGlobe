@@ -34,6 +34,8 @@ export class RedisEventBus
           !event.payload ||
           ![
             'fleet.position.updated',
+            'route.plan.updated',
+            'route.incident.updated',
             'fleet.vehicle.updated',
             'shipment.status.updated',
             'inventory.threshold.breached',

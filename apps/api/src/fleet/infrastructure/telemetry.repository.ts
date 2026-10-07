@@ -12,6 +12,8 @@ import { RedisService } from '../../infrastructure/cache/redis.service.js';
 import type { PositionDto, PositionQuery } from '../fleet.dto.js';
 interface TelemetryDocument extends Position {
   _id: string;
+  monitoringPending?: boolean;
+  accuracyMeters?: number;
 }
 @Injectable()
 export class TelemetryRepository implements OnModuleInit {
@@ -38,6 +40,7 @@ export class TelemetryRepository implements OnModuleInit {
             observedAt: -1,
             _id: -1,
           });
+          await collection.createIndex({ monitoringPending: 1, observedAt: 1 });
         })
         .catch((error) => {
           this.ready = undefined;
@@ -53,6 +56,9 @@ export class TelemetryRepository implements OnModuleInit {
       longitude: doc.longitude,
       observedAt: doc.observedAt,
       receivedAt: doc.receivedAt,
+      ...(doc.accuracyMeters === undefined
+        ? {}
+        : { accuracyMeters: doc.accuracyMeters }),
     };
   }
   async save(vehicleId: string, dto: PositionDto) {
@@ -69,6 +75,10 @@ export class TelemetryRepository implements OnModuleInit {
       observedAt,
       receivedAt: new Date().toISOString(),
       _id: dto.id,
+      monitoringPending: true,
+      ...(dto.accuracyMeters === undefined
+        ? {}
+        : { accuracyMeters: dto.accuracyMeters }),
     };
     const result = await collection.updateOne(
       { _id: dto.id },
@@ -82,7 +92,8 @@ export class TelemetryRepository implements OnModuleInit {
         existing.vehicleId !== vehicleId ||
         existing.latitude !== dto.latitude ||
         existing.longitude !== dto.longitude ||
-        existing.observedAt !== observedAt
+        existing.observedAt !== observedAt ||
+        existing.accuracyMeters !== dto.accuracyMeters
       )
         throw new ConflictException(
           'Observation ID already used with different data',
@@ -107,6 +118,22 @@ export class TelemetryRepository implements OnModuleInit {
       );
     }
     return { position, created: true };
+  }
+  async complete(id: string) {
+    await (
+      await this.collection()
+    ).updateOne({ _id: id }, { $set: { monitoringPending: false } });
+  }
+  async pending() {
+    await this.ensureIndexes();
+    const docs = await (
+      await this.collection()
+    )
+      .find({ monitoringPending: true })
+      .sort({ observedAt: 1, _id: 1 })
+      .limit(100)
+      .toArray();
+    return docs.map((doc) => this.publicPosition(doc));
   }
   async latest(vehicleId: string): Promise<Position | null> {
     try {

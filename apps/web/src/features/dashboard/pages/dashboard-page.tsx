@@ -75,6 +75,33 @@ export function DashboardPage() {
               {summary.data.shipmentPeriodComparison.previousCreated}
             </p>
           )}
+          {summary.data.dailyActiveComparison && (
+            <section
+              className="data-caption"
+              aria-label="Comparación diaria de activos"
+            >
+              <p>
+                Activos al corte diario (
+                {summary.data.dailyActiveComparison.timeZone}):{' '}
+                {summary.data.dailyActiveComparison.current} · Día anterior:{' '}
+                {summary.data.dailyActiveComparison.previous ?? 'N/D'} ·
+                Diferencia:{' '}
+                {summary.data.dailyActiveComparison.difference ?? 'N/D'} ·
+                Variación:{' '}
+                {summary.data.dailyActiveComparison.percent === null
+                  ? 'N/D'
+                  : summary.data.dailyActiveComparison.percent + '%'}
+              </p>
+              <p>
+                Corte: {summary.data.dailyActiveComparison.currentCut}.{' '}
+                {summary.data.dailyActiveComparison.reason === 'missing-history'
+                  ? 'Aún no existe una observación comparable del día anterior.'
+                  : summary.data.dailyActiveComparison.reason === 'zero-base'
+                    ? 'La base anterior es cero; no se calcula porcentaje.'
+                    : ''}
+              </p>
+            </section>
+          )}
           <section className="metrics-grid" aria-label="Métricas operativas">
             <MetricCard
               title="Envíos activos"

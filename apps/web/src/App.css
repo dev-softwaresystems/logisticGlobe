@@ -866,3 +866,14 @@ td small {
   line-height: 1.8;
   margin-bottom: 16px;
 }
+
+.route-panel pre {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.route-panel article {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

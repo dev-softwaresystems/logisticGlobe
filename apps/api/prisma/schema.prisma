@@ -96,12 +96,13 @@ model ShipmentStatusHistory {
 }
 
 model Vehicle {
-  id        String        @id @default(uuid())
-  plate     String        @unique
-  status    VehicleStatus @default(AVAILABLE)
-  shipments Shipment[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id         String        @id @default(uuid())
+  plate      String        @unique
+  status     VehicleStatus @default(AVAILABLE)
+  shipments  Shipment[]
+  routePlans RoutePlan[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 }
 
 model Warehouse {
@@ -168,19 +169,104 @@ model OutboxEvent {
   id          String    @id
   body        Json
   deliveredAt DateTime?
-  leaseOwner String?
-  leaseUntil DateTime?
+  leaseOwner  String?
+  leaseUntil  DateTime?
   createdAt   DateTime  @default(now())
 
   @@index([deliveredAt, createdAt])
 }
 
 model AuditLog {
-  id String @id @default(uuid())
-  actorId String
-  targetId String
-  action String
-  changes Json
+  id        String   @id @default(uuid())
+  actorId   String
+  targetId  String
+  action    String
+  changes   Json
   createdAt DateTime @default(now())
+
   @@index([targetId, createdAt])
+}
+
+model DashboardSnapshot {
+  id         String   @id @default(uuid())
+  timeZone   String
+  cutAt      DateTime
+  observedAt DateTime @default(now())
+  active     Int
+
+  @@unique([timeZone, cutAt])
+}
+
+model RoutePlan {
+  id          String           @id @default(uuid())
+  vehicleId   String
+  vehicle     Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  version     Int
+  requestId   String           @unique
+  requestHash String
+  shipmentIds String[]
+  geometry    Json
+  parameters  Json
+  actorId     String
+  effectiveAt DateTime         @default(now())
+  retiredAt   DateTime?
+  createdAt   DateTime         @default(now())
+  state       MonitoringState?
+  incidents   RouteIncident[]
+
+  @@unique([vehicleId, version])
+  @@index([vehicleId, retiredAt])
+}
+
+model MonitoringState {
+  planId            String    @id
+  plan              RoutePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  lastObservationId String?
+  lastObservedAt    DateTime?
+  state             Json
+  updatedAt         DateTime  @updatedAt
+}
+
+model RouteIncident {
+  id                   String                 @id @default(uuid())
+  planId               String
+  plan                 RoutePlan              @relation(fields: [planId], references: [id], onDelete: Cascade)
+  kind                 String
+  openingObservationId String
+  startedAt            DateTime
+  lastObservedAt       DateTime
+  resolvedAt           DateTime?
+  acknowledgedAt       DateTime?
+  acknowledgedBy       String?
+  history              RouteIncidentHistory[]
+
+  @@unique([planId, kind, openingObservationId])
+  @@index([resolvedAt, startedAt])
+}
+
+model RouteIncidentHistory {
+  id            String        @id @default(uuid())
+  incidentId    String
+  incident      RouteIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  action        String
+  observationId String?
+  actorId       String?
+  note          String?
+  occurredAt    DateTime      @default(now())
+}
+
+model IntegrationReceipt {
+  id          String   @id @default(uuid())
+  source      String
+  externalId  String
+  version     Int
+  fingerprint String
+  status      String
+  result      Json
+  actorId     String
+  observedAt  DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([source, externalId, version])
+  @@index([source, externalId, version])
 }

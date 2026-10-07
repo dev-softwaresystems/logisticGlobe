@@ -8,6 +8,7 @@ export interface InventoryAlertSummary {
   createdAt: string;
 }
 export interface DashboardSummary {
+  dailyActiveComparison?: DailyActiveComparison;
   shipmentPeriodComparison?: {
     currentCreated: number;
     previousCreated: number;
@@ -51,4 +52,19 @@ export interface CurrentUser {
 export interface LoginResponse {
   accessToken: string;
   user: CurrentUser;
+}
+
+export interface DailyActiveComparison {
+  metric: 'activeShipments';
+  basis: 'observed-minute-snapshot';
+  timeZone: string;
+  currentCut: string;
+  previousCut: string | null;
+  current: number;
+  previous: number | null;
+  difference: number | null;
+  percent: number | null;
+  currentObservedAt: string;
+  previousObservedAt: string | null;
+  reason: string | null;
 }

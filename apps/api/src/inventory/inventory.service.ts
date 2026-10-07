@@ -214,39 +214,47 @@ export class InventoryService {
     }
   }
   async adjust(id: string, dto: AdjustItemDto, actorId: string) {
-    return serializable(this.prisma, async (tx) => {
-      const item = await tx.inventoryItem.findUnique({ where: { id } });
-      if (!item) throw new NotFoundException('Inventory item not found');
-      if (
-        item.updatedAt.toISOString() !==
-        new Date(dto.expectedUpdatedAt).toISOString()
-      )
-        throw new ConflictException('Stock changed. Reload before editing.');
-      const updated = await tx.inventoryItem.update({
-        where: { id },
-        data: {
-          quantity: dto.quantity,
-          threshold: {
-            upsert: {
-              create: { minimumQuantity: dto.minimumQuantity },
-              update: { minimumQuantity: dto.minimumQuantity },
-            },
+    return serializable(this.prisma, (tx) =>
+      this.adjustInTransaction(tx, id, dto, actorId),
+    );
+  }
+  async adjustInTransaction(
+    tx: Prisma.TransactionClient,
+    id: string,
+    dto: AdjustItemDto,
+    actorId: string,
+  ) {
+    const item = await tx.inventoryItem.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException('Inventory item not found');
+    if (
+      item.updatedAt.toISOString() !==
+      new Date(dto.expectedUpdatedAt).toISOString()
+    )
+      throw new ConflictException('Stock changed. Reload before editing.');
+    const updated = await tx.inventoryItem.update({
+      where: { id },
+      data: {
+        quantity: dto.quantity,
+        threshold: {
+          upsert: {
+            create: { minimumQuantity: dto.minimumQuantity },
+            update: { minimumQuantity: dto.minimumQuantity },
           },
         },
-        include,
-      });
-      await tx.inventoryMovement.create({
-        data: {
-          itemId: id,
-          actorId,
-          previousQuantity: item.quantity,
-          quantity: dto.quantity,
-          reason: dto.reason,
-        },
-      });
-      await this.evaluate(tx, id, dto.quantity, dto.minimumQuantity, actorId);
-      return itemView(updated);
+      },
+      include,
     });
+    await tx.inventoryMovement.create({
+      data: {
+        itemId: id,
+        actorId,
+        previousQuantity: item.quantity,
+        quantity: dto.quantity,
+        reason: dto.reason,
+      },
+    });
+    await this.evaluate(tx, id, dto.quantity, dto.minimumQuantity, actorId);
+    return itemView(updated);
   }
   async movements(id: string, query: PaginationDto) {
     if (!(await this.prisma.inventoryItem.findUnique({ where: { id } })))

@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { integrationStatus, calculateRoute } from '../api/routing';
+import { RouteMonitoring } from '../components/route-monitoring';
+import { PlanAssignment } from '../components/plan-assignment';
 const RouteMap = lazy(() => import('../components/route-map'));
 export function RoutingPage() {
   const status = useQuery({
@@ -114,8 +116,10 @@ export function RoutingPage() {
           <Suspense fallback={<p>Cargando mapa…</p>}>
             <RouteMap key={route.data.calculatedAt} route={route.data} />
           </Suspense>
+          {route.variables && <PlanAssignment input={route.variables} />}
         </section>
       )}
+      <RouteMonitoring />
     </>
   );
 }

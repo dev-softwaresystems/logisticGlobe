@@ -1007,3 +1007,21 @@ No intentes construir todos los microservicios ni desplegar AWS todavía. Conser
 Si encuentras una configuración existente que contradice estas instrucciones, no la reemplaces automáticamente: evalúa si ya es funcional, preserva el trabajo válido y adapta el plan con el menor cambio posible.
 
 Empieza por `git status`, inspección del árbol, los manifests de paquetes y las versiones instaladas. Después implementa, verifica y documenta.
+
+## Ampliación aprobada: cierre local integral (2026-10-07)
+
+La instrucción de ejecutar docs/prompts/prompt-cierre-integral-logisticsglobe.md amplía el MVP local de forma acotada. Preserva todas las reglas anteriores de seguridad, datos, majors, límites de dominio y ausencia de commit/push/despliegue no autorizado.
+
+- Comparativa diaria: snapshots realmente observados al mismo minuto local, cortes UTC y OPERATION_TIME_ZONE validada. Ausencia de historia, DST ambiguo o base cero debe mostrarse como N/D, nunca estimarse. Mantener separada la comparación semanal de creación. Definiciones en docs/requirements/metric-definitions.md.
+- Reportes ejecutivos PDF/XLSX reales: lectura SQL consistente, seis métricas, filtros/periodo/corte, comparaciones disponibles, flota/almacenes/alertas/salud y límites. CSV se conserva. Backend autoriza exportación; probar contenido, tipos, filtros, paginación y descarga.
+- Planes de ruta versionados por vehículo y varios envíos: geometría de proveedor configurado, vigencia/actor/parámetros. Desvíos/paradas requieren calidad, duración, histéresis, exclusión de zonas autorizadas, idempotencia, tratamiento de late/replay/gaps y reconocimiento con historial. Mongo conserva GPS; SQL conserva incidentes y estado derivado acotado; Redis es reconstruible. Ver ADR008.
+- ERP/WMS: referencia local JSON/CSV tipada y validada, a través de casos de uso de inventario con CAS/receipt/alertas/movimientos. Compatibilidad y fuente autoritativa del WMS externo requieren acuerdo, no se infieren del CSV. docs/integrations/erp-wms-contract.md.
+- Health funcional separado de liveness/readiness: inventario es módulo, routing es adaptador; configuración no equivale a disponibilidad. Sondas readonly limitadas, caché de 15 s y ausencia de datos sensibles. Métricas acotadas de outbox/lag/routing.
+- Capacidad: harness reproducible de 500 envíos / 100 vehículos con GPS continuo, usuarios/mezcla/warmup/duración explícitos, reconexiones y fallos. Separar HTTP/adapter/hit/miss/motor interno y registrar resultados reales. No acreditar <50 ms con fixtures ni solo cache. Perfil contractual/métrica / 45 ms pendientes de decisión. docs/testing/load-test-plan.md.
+- Continuidad: RTO <2 h / RPO <15 min son objetivos del entorno correspondiente. Medir desde incidente hasta funciones, watermarks y pérdidas, con SQL/Mongo no vacíos, Redis y reconciliación. Backup diario no acredita RPO. docs/operations/recovery-plan.md.
+- Piloto de 14–30 días / 10–15 vehículos, revisión día 10, capacitación y UAT requieren participación/aceptación del cliente. Plazos contractuales son relativos a firma/entrega/aceptación, no fecha de borrador.
+- Mantener traceability/backlog/criteria, conciliación, riesgos/RACI/control de cambios, manuales/DesignSystem, SBOM/licencias y paquete allowlist verificable sin secretos. Cifrado estándar, destinatario/canal por aprobar; no transferencia automática.
+
+Niveles obligatorios: preparado, implementado, verificado en entorno descrito, aceptado externamente. Ninguno implica el siguiente. Responsables propuestos por usuario: Operaciones cliente con logística/flota/almacén para UAT; CTO y TI cliente para infraestructura; Director General/comité con Finanzas para presupuesto y autoridad cliente para sus gastos. Todos pendientes de confirmación. No disminuir scores E6 por escribir planes.
+
+Local: código/tests/migraciones/documentación/harness/paquete. Integración: proveedores/dispositivos/ERP/piloto/UAT y cargos confirmados. Producción: región/presupuesto/TLS/PITR/SLI 99.9%/routing real/CI remota/handover/actas. Estado y evidencia en docs/requirements/traceability.md, docs/requirements-status.md y docs/verification.md. No convertir AGENTS en contrato ni certificar cumplimiento externo.

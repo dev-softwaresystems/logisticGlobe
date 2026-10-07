@@ -121,7 +121,7 @@ Definición de métricas:
 | highPriorityDeliveries   | Envíos pendientes con prioridad HIGH                                         |
 
 La capacidad se mide en unidades homogéneas en esta iteración; no representa volumen físico ni peso.
-La lectura del dashboard usa una transacción RepeatableRead. No mantiene una segunda fuente de verdad en Redis.
+La lectura del dashboard y captura usa Serializable con reintentos; los reportes de solo lectura usan RepeatableRead. No mantiene una segunda fuente de verdad en Redis.
 
 ## Prisma
 
@@ -220,3 +220,19 @@ La construcción usa el lockfile y la inyección de contratos workspace para emp
 Ejecutar la CI remota mediante publicación y revisión humana, aprobar el proveedor cartográfico y la integración de dispositivos, y seguir la [preparación de producción](docs/architecture/production-readiness.md). No se garantiza el SLO de disponibilidad ni el objetivo de enrutamiento sin desplegar y medir el servicio correspondiente.
 
 La [matriz de cumplimiento](docs/requirements-status.md) y la [evidencia de verificación local](docs/verification.md) detallan lo implementado, los comandos ejecutados y los límites pendientes.
+
+## Cierre local integral
+
+Se añadieron snapshots diarios de activos, reporte ejecutivo PDF/XLSX con periodo y filtros, planes versionados y monitorización de desvíos/paradas, importación de stock JSON/CSV de referencia y salud funcional protegida. Los adaptadores reales permanecen configurables; no hay ERP, dispositivos ni entorno productivo aprobados.
+
+La [trazabilidad](docs/requirements/traceability.md), [criterios](docs/requirements/acceptance-criteria.md) y [backlog](docs/requirements/backlog.md) separan implementación, verificación local y aceptación externa. Consulta [manual de usuario](docs/user/user-manual.md), [manual administrativo](docs/user/administrator-manual.md) y [Design System](docs/design/design-system.md).
+
+OPERATION_TIME_ZONE define la zona IANA (default America/Mexico_City). El diario compara observaciones del mismo minuto local; antes de tener histórico comparable muestra N/D. ROUTING_HEALTH_PATH es opcional, solo un HEAD aprobado y no facturable; configurado sin sonda es desconocido. No guardar secretos en VITE.
+
+Nuevos comandos: pnpm licenses:inventory, pnpm release:package y pnpm release:verify. Generan SBOM/notices, paquete source TAR.GZ con manifiesto/checksums y prueban extracción/instalación congelada/generate/types/build en directorio aislado. Artifacts permanece ignorado; cifrado/entrega real pendientes. Demo GPG: GPG_BINARY privado opcional y node scripts/encryption-demo.mjs (solo texto sintético, clave aleatoria en memoria).
+
+pnpm test:capacity requiere CLOSURE_LOAD=true y TEST_DATABASE_URL dedicado; parámetros LOAD_SECONDS/LOAD_WARMUP_SECONDS/LOAD_GPS_MS/LOAD_USERS/LOAD_REPLICAS en [plan de carga](docs/testing/load-test-plan.md). pnpm test:recovery requiere CLOSURE_RECOVERY=true y base dedicada, Docker local, y conserva targets nuevos. No correr suites de persistencia/carga/build simultáneamente.
+
+[Piloto](docs/testing/pilot-plan.md) y [UAT](docs/testing/uat-plan.md) son propuestas; [riesgos](docs/governance/risk-register.md), [RACI](docs/governance/responsibilities-raci.md), [operación productiva](docs/operations/production-design.md), [costos](docs/delivery/technical-cost-model.md) y [entrega](docs/delivery/delivery-checklist.md) requieren revisión humana. No firma, disponibilidad99.9%, p95motor<50ms ni RPOproductivo acreditados. Resultados actuales en [verificación](docs/verification.md).
+
+Manual técnico consolidado: [instalación, operación y release](docs/user/technical-manual.md). Preview local verificado de esta ejecución: http://localhost:18080. El scan CVE de imágenes requiere autenticación Docker Scout; detalle y comandos en [verificación](docs/verification.md).

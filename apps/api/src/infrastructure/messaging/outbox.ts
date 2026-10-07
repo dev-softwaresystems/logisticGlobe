@@ -14,6 +14,7 @@ import type {
 import type { Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { LocalEventBus } from './event-bus.js';
+import { outboxBacklog, outboxAge } from '../observability/metrics.js';
 export async function recordEvent<K extends LogisticsEventName>(
   tx: Prisma.TransactionClient,
   name: K,
@@ -54,6 +55,20 @@ export class OutboxDispatcher implements OnModuleInit, OnModuleDestroy {
     if (this.running) return;
     this.running = true;
     try {
+      const [pending, oldest] = await Promise.all([
+        this.prisma.outboxEvent.count({ where: { deliveredAt: null } }),
+        this.prisma.outboxEvent.findFirst({
+          where: { deliveredAt: null },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
+      ]);
+      outboxBacklog.set(pending);
+      outboxAge.set(
+        oldest
+          ? Math.max(0, (Date.now() - oldest.createdAt.getTime()) / 1000)
+          : 0,
+      );
       const events = await this.prisma.$transaction(async (tx) => {
         const claimed = await tx.$queryRaw<
           { id: string }[]

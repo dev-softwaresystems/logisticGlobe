@@ -22,6 +22,13 @@ export class ShipmentPeriodComparisonDto {
 export class DashboardSummaryDto implements DashboardSummary {
   @ApiProperty({ type: ShipmentPeriodComparisonDto, nullable: true })
   shipmentPeriodComparison?: ShipmentPeriodComparisonDto | null;
+  @ApiProperty({
+    type: Object,
+    nullable: true,
+    description:
+      'Observed daily snapshots at equal local minute, with UTC cuts, timezone, difference and nullable percent; missing history is not estimated',
+  })
+  dailyActiveComparison?: DashboardSummary['dailyActiveComparison'];
   @ApiProperty({ description: 'Shipments in transit' })
   activeShipments!: number;
   @ApiProperty({

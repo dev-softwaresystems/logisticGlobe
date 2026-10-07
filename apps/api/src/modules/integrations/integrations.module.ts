@@ -20,6 +20,9 @@ import { FleetModule } from '../../fleet/fleet.module.js';
 import { FleetService } from '../../fleet/fleet.service.js';
 import { PositionDto } from '../../fleet/fleet.dto.js';
 import { AuthModule } from '../../auth/auth.module.js';
+import { InventoryModule } from '../../inventory/inventory.module.js';
+import { ReferenceStockController } from './reference.controller.js';
+import { ReferenceStockService } from './reference.service.js';
 import { AccessGuard } from '../../auth/access.guard.js';
 import { Roles, RolesGuard } from '../../auth/roles.guard.js';
 import { READ_ROLES } from '../../common/roles.js';
@@ -77,7 +80,8 @@ class IntegrationsController {
   }
 }
 @Module({
-  imports: [AuthModule, FleetModule],
-  controllers: [IntegrationsController],
+  imports: [AuthModule, FleetModule, InventoryModule],
+  controllers: [IntegrationsController, ReferenceStockController],
+  providers: [ReferenceStockService],
 })
 export class IntegrationsModule {}

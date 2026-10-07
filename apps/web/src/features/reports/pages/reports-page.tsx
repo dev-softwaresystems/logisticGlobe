@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { ExecutiveExport } from '../components/executive-export';
 import { downloadReport } from '../api/reports';
 export function ReportsPage() {
   const mutation = useMutation({
@@ -13,6 +14,7 @@ export function ReportsPage() {
           <p className="muted">CSV UTF-8 con datos actuales de la operación.</p>
         </div>
       </div>
+      <ExecutiveExport />
       <section className="panel operation-form">
         <h2>Exportar datos</h2>
         <p>

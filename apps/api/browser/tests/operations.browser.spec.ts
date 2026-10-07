@@ -42,6 +42,7 @@ test('shipment lifecycle, GPS, critical stock, real CSV download and responsive 
   await page
     .locator('select[name="vehicleId"]')
     .selectOption({ label: prefix.toUpperCase() });
+  const vehicleId = await page.locator('select[name="vehicleId"]').inputValue();
   await page
     .getByRole('button', { name: 'Guardar envío', exact: true })
     .click();
@@ -52,6 +53,45 @@ test('shipment lifecycle, GPS, critical stock, real CSV download and responsive 
   await expect(
     page.getByRole('button', { name: 'Confirmar entrega', exact: true }),
   ).toBeVisible();
+  const shipmentUrl = page.url(),
+    shipmentId = new URL(shipmentUrl).pathname.split('/').at(-1)!;
+  await page.getByRole('link', { name: 'Rutas', exact: true }).click();
+  await page.getByLabel('Latitud de origen').fill('19.4');
+  await page.getByLabel('Longitud de origen').fill('-99.1');
+  await page.getByLabel('Latitud de destino').fill('19.5');
+  await page.getByLabel('Longitud de destino').fill('-99.2');
+  await page
+    .getByRole('button', { name: 'Calcular ruta', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Asignar ruta operativa', exact: true }),
+  ).toBeVisible();
+  await page.getByLabel('ID del vehículo', { exact: true }).fill(vehicleId);
+  await page.getByLabel('IDs de envíos separados por coma').fill(shipmentId);
+  await page.getByRole('button', { name: 'Asignar ruta', exact: true }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Ruta asignada. Versión 1.' }),
+  ).toBeVisible();
+  const operational = page
+    .locator('article')
+    .filter({ hasText: prefix.toUpperCase() + ' · Ruta v1' });
+  await expect(operational).toContainText('Corredor: 200 m');
+  await expect(operational).toContainText('Zonas autorizadas: 0');
+  await operational
+    .getByText('Alternativa textual a la ruta', { exact: true })
+    .click();
+  await expect(operational.locator('pre')).toContainText('-99.1');
+  await expect(
+    operational.getByRole('region', { name: 'Ruta calculada', exact: true }),
+  ).toBeVisible();
+  await expect(operational.locator('.leaflet-overlay-pane path')).toBeVisible();
+  await page.screenshot({
+    path: resolve(
+      '../../artifacts/closure/routes-' + info.project.name + '.png',
+    ),
+    fullPage: true,
+  });
+  await page.goto(shipmentUrl);
   await page
     .getByRole('button', { name: 'Confirmar entrega', exact: true })
     .click();
@@ -166,6 +206,56 @@ test('shipment lifecycle, GPS, critical stock, real CSV download and responsive 
     ),
     fullPage: true,
   });
+  await expect(
+    page.getByRole('region', {
+      name: 'Comparación diaria de activos',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Reportes', exact: true }).click();
+  for (const format of ['pdf', 'xlsx']) {
+    await page.locator('select[name="format"]').selectOption(format);
+    const waiting = page.waitForEvent('download');
+    await page
+      .getByRole('button', { name: 'Descargar reporte ejecutivo', exact: true })
+      .click();
+    const file = await waiting;
+    expect(file.suggestedFilename()).toBe('LogisticsGlobe-dashboard.' + format);
+    const path = info.outputPath('dashboard.' + format);
+    await file.saveAs(path);
+    const data = await readFile(path);
+    expect(data.length).toBeGreaterThan(1000);
+    expect(data.subarray(0, format === 'pdf' ? 5 : 2).toString()).toBe(
+      format === 'pdf' ? '%PDF-' : 'PK',
+    );
+  }
+  await page
+    .getByRole('link', { name: 'Estado del sistema', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Salud funcional', exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: resolve(
+      '../../artifacts/closure/system-' + info.project.name + '.png',
+    ),
+    fullPage: true,
+  });
+  await page.getByRole('link', { name: 'Inventario', exact: true }).click();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Intercambio de stock de referencia',
+      exact: true,
+    }),
+  ).toBeVisible();
+
   await page
     .getByRole('button', { name: 'Cerrar sesión', exact: true })
     .click();

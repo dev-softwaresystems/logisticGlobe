@@ -14,3 +14,8 @@ export interface IntegrationStatus {
   gpsConfigured: boolean;
   routingConfigured: boolean;
 }
+
+export interface Coordinate {
+  latitude: number;
+  longitude: number;
+}

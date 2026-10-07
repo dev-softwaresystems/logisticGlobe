@@ -16,6 +16,8 @@ export interface RuntimeEnvironment {
   DISTRIBUTED_REALTIME: boolean;
   DISTRIBUTED_RATE_LIMIT: boolean;
   TRUST_PROXY_HOPS: number;
+  OPERATION_TIME_ZONE: string;
+  ROUTING_HEALTH_PATH: string;
 }
 export function durationSeconds(value: string): number {
   const match = /^(\d+)(s|m|h|d)$/.exec(value);
@@ -139,6 +141,14 @@ export function validateEnvironment(
       errors.push('ROUTING_URL');
     }
   }
+  const ROUTING_HEALTH_PATH = optional('ROUTING_HEALTH_PATH');
+  if (
+    ROUTING_HEALTH_PATH &&
+    (!/^\/[A-Za-z0-9/_-]{0,100}$/.test(ROUTING_HEALTH_PATH) ||
+      ROUTING_HEALTH_PATH.startsWith('//') ||
+      ROUTING_HEALTH_PATH.startsWith('/route/'))
+  )
+    errors.push('ROUTING_HEALTH_PATH');
   const flag = (key: string): boolean => {
     const value = input[key] ?? 'false';
     if (!['true', 'false', true, false].includes(value as string | boolean))
@@ -147,6 +157,15 @@ export function validateEnvironment(
   };
   const DISTRIBUTED_REALTIME = flag('DISTRIBUTED_REALTIME');
   const DISTRIBUTED_RATE_LIMIT = flag('DISTRIBUTED_RATE_LIMIT');
+  const OPERATION_TIME_ZONE = text(
+    'OPERATION_TIME_ZONE',
+    'America/Mexico_City',
+  );
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: OPERATION_TIME_ZONE }).format();
+  } catch {
+    errors.push('OPERATION_TIME_ZONE');
+  }
   const TRUST_PROXY_HOPS = Number(input.TRUST_PROXY_HOPS ?? 0);
   if (
     !Number.isInteger(TRUST_PROXY_HOPS) ||
@@ -177,5 +196,7 @@ export function validateEnvironment(
     DISTRIBUTED_REALTIME,
     DISTRIBUTED_RATE_LIMIT,
     TRUST_PROXY_HOPS,
+    OPERATION_TIME_ZONE,
+    ROUTING_HEALTH_PATH,
   };
 }

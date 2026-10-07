@@ -13,6 +13,7 @@ import { EVENT_BUS } from '../infrastructure/messaging/event-bus.js';
 import { recordEvent } from '../infrastructure/messaging/outbox.js';
 import { serializable } from '../common/transaction.js';
 import { TelemetryRepository } from './infrastructure/telemetry.repository.js';
+import { TelemetryReconciler } from './infrastructure/telemetry-reconciler.js';
 import type {
   ChangeVehicleDto,
   CreateVehicleDto,
@@ -27,6 +28,8 @@ export class FleetService {
     @Inject(TelemetryRepository)
     private readonly telemetry: TelemetryRepository,
     @Inject(EVENT_BUS) private readonly bus: EventBus,
+    @Inject(TelemetryReconciler)
+    private readonly reconciler: TelemetryReconciler,
   ) {}
   async list(query: VehicleQuery) {
     const where: Prisma.VehicleWhereInput = {
@@ -123,7 +126,13 @@ export class FleetService {
     });
   }
   async position(id: string, dto: PositionDto) {
-    await this.detail(id);
+    if (
+      !(await this.prisma.vehicle.findUnique({
+        where: { id },
+        select: { id: true },
+      }))
+    )
+      throw new NotFoundException('Vehicle not found');
     let result;
     try {
       result = await this.telemetry.save(id, dto);
@@ -136,18 +145,11 @@ export class FleetService {
         throw error;
       throw new ServiceUnavailableException('Telemetry storage unavailable');
     }
-    if (result.created)
-      await this.bus.publish({
-        id: dto.id,
-        name: 'fleet.position.updated',
-        occurredAt: result.position.receivedAt,
-        payload: {
-          vehicleId: id,
-          latitude: dto.latitude,
-          longitude: dto.longitude,
-          observedAt: result.position.observedAt,
-        },
-      });
+    await this.reconciler.process(result.position).catch(() => {
+      throw new ServiceUnavailableException(
+        'Telemetry persisted; processing pending. Retry the same observation ID.',
+      );
+    });
     return result.position;
   }
   async history(id: string, query: PositionQuery) {

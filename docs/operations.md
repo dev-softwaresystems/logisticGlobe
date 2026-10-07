@@ -60,3 +60,11 @@ test:load exige LOAD_ACCESS_TOKEN de una sesión de ensayo en entorno; acepta LO
 CI prepara instalación congelada, lint, typecheck, unitarias, build, e2e, navegador, auditoría y build de imágenes; no publica ni despliega. Su ejecución remota necesita publicar cambios por una persona.
 
 Para volver del preview de contenedores a desarrollo, ejecuta app:down antes de pnpm dev. Mantiene PostgreSQL, MongoDB, Redis y los volúmenes. Si se ejecutan varias API contra la misma base, todas deben habilitar el mismo transporte DISTRIBUTED_REALTIME para compartir eventos.
+
+## Runbooks y evidencia del cierre local
+
+Guías específicas: [continuidad](operations/recovery-plan.md), [ensayo](operations/recovery-drill-report.md), [diseño productivo](operations/production-design.md), [alertas](operations/alert-rules.md) y [relevo](operations/devsecops-handover.md). El ensayo local restaura SQL/Mongo no vacíos a destino nuevo, prueba login/stock/envío/GPS/incidente y read-through Redis. Fuentes y volúmenes preservados. PITR/offsite/cifrado real y persona suplente pendientes.
+
+Retención propuesta, sin purgas reales, en security/data-treatment-and-retention.md. Leases outbox de 60 s y reconciler Mongo pendientes cada 2 s permiten replay al menos una vez; no transacción distribuida. No borrar pending ni Redis FLUSHALL. Config providers/secretos privada; cambios requieren restart/verificación, no secreto VITE.
+
+Carga sostenida en testing/load-test-plan.md; pausar builds y otras suites que comparten _test. Paquete source/manifest/SBOM y extracción limpia por release:package/release:verify; no incluir .env, backups ni originales PDF. GPG demo verifica roundtrip de texto sintético, no entrega real. Región/IAM/PITR/SLI/soporte externo requieren gates de governance/release-approval.md.

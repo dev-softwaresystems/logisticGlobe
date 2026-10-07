@@ -1,3 +1,4 @@
+import { ReferenceImport } from '../components/reference-import';
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -238,6 +239,7 @@ export function InventoryPage() {
           )}
         </section>
       )}
+      <ReferenceImport />
     </>
   );
 }

@@ -46,6 +46,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
+      - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
@@ -58,3 +59,18 @@ jobs:
       - run: docker compose config --quiet
       - run: docker compose -f docker-compose.yml -f docker-compose.application.yml config --quiet
       - run: pnpm app:build
+      - run: pnpm licenses:inventory
+      - run: pnpm release:package
+      - run: pnpm release:verify
+      - name: Preserve approved QA manifests
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: logistics-globe-qa-manifests
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            artifacts/closure/licenses/sbom.cdx.json
+            artifacts/closure/licenses/review.json
+            artifacts/closure/licenses/THIRD-PARTY-NOTICES.txt
+            artifacts/closure/LogisticsGlobe-source.tar.gz.sha256
+            artifacts/closure/package-verification.json

@@ -37,6 +37,12 @@ export class ChangeVehicleDto {
   expectedUpdatedAt!: string;
 }
 export class PositionDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(0)
+  @Max(10000)
+  accuracyMeters?: number;
   @ApiProperty({
     description: 'Idempotency key for this observation',
     format: 'uuid',

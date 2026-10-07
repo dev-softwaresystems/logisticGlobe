@@ -2,6 +2,7 @@ import {
   Registry,
   Counter,
   Histogram,
+  Gauge,
   collectDefaultMetrics,
 } from '@prometheus-io/client';
 export const registry = new Registry();
@@ -48,3 +49,26 @@ export function observeRequest(
   requests.inc(labels);
   duration.observe(labels, seconds);
 }
+
+export const functionalHealth = new Gauge({
+  name: 'logistics_functional_health',
+  help: 'Read-only functional probes: up 1, unknown/degraded 0.5, down 0',
+  labelNames: ['component'] as const,
+  registers: [registry],
+});
+export const outboxBacklog = new Gauge({
+  name: 'logistics_outbox_pending',
+  help: 'Undelivered SQL events',
+  registers: [registry],
+});
+export const outboxAge = new Gauge({
+  name: 'logistics_outbox_oldest_seconds',
+  help: 'Age of oldest undelivered event',
+  registers: [registry],
+});
+export const monitoringLag = new Histogram({
+  name: 'logistics_monitoring_processing_lag_seconds',
+  help: 'Observation receive to monitoring completion (not GPS provider transport)',
+  buckets: [0.01, 0.1, 1, 5, 30, 120],
+  registers: [registry],
+});

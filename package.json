@@ -13,7 +13,7 @@
     "build": "pnpm db:generate && pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm db:generate && pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "test": "pnpm -r --workspace-concurrency=1 test",
     "test:e2e": "pnpm --filter @logistics-globe/api test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -31,7 +31,12 @@
     "ops:backup": "node scripts/backup.mjs",
     "test:load": "node scripts/load-test.mjs",
     "app:build": "node scripts/build-containers.mjs",
-    "app:up": "docker compose -f docker-compose.yml -f docker-compose.application.yml up -d"
+    "app:up": "docker compose -f docker-compose.yml -f docker-compose.application.yml up -d",
+    "licenses:inventory": "node scripts/license-inventory.mjs",
+    "release:package": "pnpm licenses:inventory && node scripts/release-package.mjs",
+    "release:verify": "node scripts/verify-package.mjs",
+    "test:capacity": "pnpm --filter @logistics-globe/api exec vitest run --config vitest.config.e2e.ts test/sustained-load.e2e-spec.ts",
+    "test:recovery": "pnpm --filter @logistics-globe/api exec vitest run --config vitest.config.e2e.ts test/recovery-drill.e2e-spec.ts"
   },
   "devDependencies": {
     "prettier": "^3.9.9"

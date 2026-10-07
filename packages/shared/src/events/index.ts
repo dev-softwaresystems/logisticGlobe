@@ -1,5 +1,12 @@
 import type { ShipmentStatus, VehicleStatus } from '../contracts/operations.js';
 export interface LogisticsEventPayloads {
+  'route.plan.updated': { planId: string; vehicleId: string; version: number };
+  'route.incident.updated': {
+    incidentId: string;
+    vehicleId: string;
+    kind: string;
+    resolved: boolean;
+  };
   'fleet.position.updated': {
     vehicleId: string;
     latitude: number;

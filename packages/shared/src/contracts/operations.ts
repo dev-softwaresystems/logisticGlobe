@@ -31,6 +31,7 @@ export interface CreateShipment {
   vehicleId?: string;
 }
 export interface Position {
+  accuracyMeters?: number;
   id: string;
   vehicleId: string;
   latitude: number;

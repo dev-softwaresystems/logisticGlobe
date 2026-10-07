@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { FleetService } from './fleet.service.js';
+import { TelemetryReconciler } from './infrastructure/telemetry-reconciler.js';
 import { PrismaService } from '../infrastructure/database/prisma.service.js';
 import { TelemetryRepository } from './infrastructure/telemetry.repository.js';
 import { EVENT_BUS } from '../infrastructure/messaging/event-bus.js';
@@ -8,6 +9,7 @@ describe('FleetService', () => {
     const module = await Test.createTestingModule({
       providers: [
         FleetService,
+        { provide: TelemetryReconciler, useValue: {} },
         { provide: PrismaService, useValue: {} },
         { provide: TelemetryRepository, useValue: {} },
         { provide: EVENT_BUS, useValue: {} },

@@ -1,4 +1,5 @@
 import { ServiceHealthPanel } from '../components/service-health-panel';
+import { OperationalHealthPanel } from '../components/operational-health-panel';
 export function SystemPage() {
   return (
     <>
@@ -12,6 +13,7 @@ export function SystemPage() {
         </div>
       </div>
       <ServiceHealthPanel />
+      <OperationalHealthPanel />
       <p className="page-note">
         Las comprobaciones reflejan el estado actual. Los objetivos de
         disponibilidad y rendimiento se validarán mediante pruebas de carga y

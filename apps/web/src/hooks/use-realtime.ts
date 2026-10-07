@@ -3,7 +3,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { connectRealtime } from '../services/realtime';
 import type { LogisticsEvent, Page, Vehicle } from '@logistics-globe/shared';
 const keys: Record<LogisticsEvent['name'], string[]> = {
-  'fleet.position.updated': ['positions'],
+  'route.plan.updated': ['route-plans', 'route-incidents'],
+  'route.incident.updated': ['route-incidents'],
+  'fleet.position.updated': ['positions', 'route-plans', 'route-incidents'],
   'fleet.vehicle.updated': ['fleet', 'dashboard'],
   'shipment.status.updated': ['shipments', 'shipment', 'dashboard', 'fleet'],
   'inventory.threshold.breached': [
