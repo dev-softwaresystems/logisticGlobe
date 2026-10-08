@@ -236,3 +236,11 @@ pnpm test:capacity requiere CLOSURE_LOAD=true y TEST_DATABASE_URL dedicado; par�
 [Piloto](docs/testing/pilot-plan.md) y [UAT](docs/testing/uat-plan.md) son propuestas; [riesgos](docs/governance/risk-register.md), [RACI](docs/governance/responsibilities-raci.md), [operación productiva](docs/operations/production-design.md), [costos](docs/delivery/technical-cost-model.md) y [entrega](docs/delivery/delivery-checklist.md) requieren revisión humana. No firma, disponibilidad99.9%, p95motor<50ms ni RPOproductivo acreditados. Resultados actuales en [verificación](docs/verification.md).
 
 Manual técnico consolidado: [instalación, operación y release](docs/user/technical-manual.md). Preview local verificado de esta ejecución: http://localhost:18080. El scan CVE de imágenes requiere autenticación Docker Scout; detalle y comandos en [verificación](docs/verification.md).
+
+## Flota y presentación profesional
+
+La guía de [demostración local](docs/demo/local-demonstration.md) prepara 20 vehículos, 80 envíos, cuatro almacenes y 24 artículos separados bajo LGD-V1-, con movimientos/historiales válidos y 18 posiciones simuladas persistidas en MongoDB. Usa pnpm demo:seed y pnpm demo:verify después de generar/migrar/crear el ADMIN local. Repetir conserva registros, usuarios, observaciones y cambios manuales.
+
+Con pnpm dev activo, pnpm demo:simulate inicia explícitamente hasta seis vehículos demo sin plan vigente, mediante JWT privado y la ingesta normal de desarrollo; Ctrl+C detiene sin borrar histórico. No está permitido en producción. La trayectoria es sintética y no acredita routing vial.
+
+Mapa y listado tienen selección, filtros, centrado, antigüedad y detalles GPS/operativos. El formulario manual admite fecha/hora local, precisión, velocidad y rumbo; el servidor conserva procedencia y actor interno. Sin cartografía aprobada se utiliza el plano de coordenadas y se muestra la limitación. [ADR 009](docs/architecture/adr-009-demonstration-and-gps-provenance.md) explica consistencia y aislamiento.

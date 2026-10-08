@@ -2,7 +2,9 @@ import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsBoolean,
   IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -20,6 +22,14 @@ export class VehicleQuery extends PaginationDto {
   status?: VehicleStatus;
 }
 export class CreateVehicleDto {
+  @ApiPropertyOptional({
+    description: 'Nominal payload in kg; not warehouse units',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100000)
+  capacityKg?: number;
   @ApiProperty()
   @IsString()
   @Length(3, 32)
@@ -37,6 +47,26 @@ export class ChangeVehicleDto {
   expectedUpdatedAt!: string;
 }
 export class PositionDto {
+  @ApiPropertyOptional({
+    description: 'Explicit local simulation; rejected in production',
+  })
+  @IsOptional()
+  @IsBoolean()
+  simulated?: boolean;
+  @ApiPropertyOptional({ description: 'Speed in km/h' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(200)
+  speedKph?: number;
+  @ApiPropertyOptional({
+    description: 'Heading clockwise from north in degrees',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(359.999)
+  headingDegrees?: number;
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber({ allowNaN: false, allowInfinity: false })

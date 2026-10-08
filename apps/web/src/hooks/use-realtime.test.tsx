@@ -32,6 +32,11 @@ it('updates cached positions from typed events without regressing for delayed ob
     page: 1,
     pageSize: 100,
   });
+  client.setQueryData(['fleet', 'detail', 'vehicle'], {
+    id: 'vehicle',
+    plate: 'GPS',
+    position: null,
+  });
   function Harness() {
     useRealtime();
     return null;
@@ -53,6 +58,11 @@ it('updates cached positions from typed events without regressing for delayed ob
     client.getQueryData<Page<Vehicle>>(['fleet', 'map'])?.items[0].position
       ?.latitude,
   ).toBe(19);
+  expect(client.getQueryData(['fleet', 'detail', 'vehicle'])).toEqual({
+    id: 'vehicle',
+    plate: 'GPS',
+    position: null,
+  });
   view.unmount();
   expect(close).toHaveBeenCalledOnce();
   client.clear();

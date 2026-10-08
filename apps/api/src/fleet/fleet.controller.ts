@@ -1,6 +1,7 @@
 import type { AuthenticatedRequest } from '../auth/access.guard.js';
 import {
   Body,
+  ForbiddenException,
   Controller,
   Get,
   Inject,
@@ -53,8 +54,14 @@ export class FleetController {
   @Post(':id/positions') @Roles(...FLEET_WRITE) position(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: PositionDto,
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.position(id, dto);
+    if (dto.simulated && process.env.NODE_ENV === 'production')
+      throw new ForbiddenException('Simulation is disabled in production');
+    return this.service.position(id, dto, {
+      source: dto.simulated ? 'simulated' : 'manual',
+      actorId: req.user!.id,
+    });
   }
   @Get(':id/positions') history(
     @Param('id', ParseUUIDPipe) id: string,

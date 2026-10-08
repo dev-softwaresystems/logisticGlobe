@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { test, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Page, WebSocketRoute } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 async function login(page: Page, email = process.env.BROWSER_TEST_EMAIL!) {
@@ -18,6 +19,21 @@ async function login(page: Page, email = process.env.BROWSER_TEST_EMAIL!) {
 test('shipment lifecycle, GPS, critical stock, real CSV download and responsive dashboard', async ({
   page,
 }, info) => {
+  const realtimeConnections: WebSocketRoute[] = [];
+  let pauseConnections = false;
+  let authorization = '';
+  page.on('request', (req) => {
+    const header = req.headers().authorization;
+    if (header) authorization = header;
+  });
+  await page.routeWebSocket(/\/socket\.io\//, (ws) => {
+    if (pauseConnections) {
+      void ws.close();
+      return;
+    }
+    realtimeConnections.push(ws);
+    ws.connectToServer();
+  });
   const prefix = process.env.BROWSER_PREFIX! + '-' + info.project.name;
   await login(page);
   await page.getByRole('link', { name: 'Flota', exact: true }).click();
@@ -108,6 +124,10 @@ test('shipment lifecycle, GPS, critical stock, real CSV download and responsive 
   await page.getByLabel('Latitud', { exact: true }).fill('19.4326');
   await page.getByLabel('Longitud', { exact: true }).fill('-99.1332');
   await page
+    .getByLabel('Velocidad (km/h, opcional)', { exact: true })
+    .fill('30');
+  await page.getByLabel('Rumbo (°, opcional)', { exact: true }).fill('90');
+  await page
     .getByRole('button', { name: 'Registrar observación', exact: true })
     .click();
   await expect(
@@ -118,6 +138,60 @@ test('shipment lifecycle, GPS, critical stock, real CSV download and responsive 
       name: 'Mapa geográfico de posiciones recibidas',
     }),
   ).toBeVisible();
+  await page
+    .getByRole('combobox', { name: 'Vehículo en el mapa', exact: true })
+    .selectOption(vehicleId);
+  const mapDetail = page.getByRole('region', {
+    name: 'Detalle del vehículo seleccionado',
+  });
+  await expect(mapDetail).toContainText('Registro manual');
+  await expect(mapDetail).toContainText('30 km/h');
+  await page
+    .getByRole('button', { name: 'Centrar vehículo', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Mostrar flota visible', exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole('region', { name: 'Mapa geográfico de posiciones recibidas' })
+      .locator('.leaflet-overlay-pane path'),
+  ).toHaveCount(1);
+  await page.reload();
+  await page
+    .getByRole('combobox', { name: 'Vehículo en el mapa', exact: true })
+    .selectOption(vehicleId);
+  await expect(
+    page.getByRole('region', { name: 'Detalle del vehículo seleccionado' }),
+  ).toContainText('30 km/h');
+  pauseConnections = true;
+  for (const connection of realtimeConnections)
+    await connection
+      .close({ code: 1012, reason: 'Local recovery verification' })
+      .catch(() => {});
+  await expect(
+    page.getByText(/Centro de operaciones.*Reconectando/),
+  ).toBeVisible();
+  const missed = await page.request.post(
+    'http://localhost:3001/api/v1/fleet/vehicles/' + vehicleId + '/positions',
+    {
+      headers: { authorization },
+      data: {
+        id: randomUUID(),
+        latitude: 19.44,
+        longitude: -99.14,
+        observedAt: new Date().toISOString(),
+        speedKph: 31,
+        headingDegrees: 90,
+      },
+    },
+  );
+  expect(missed.status()).toBe(201);
+  pauseConnections = false;
+  await expect(page.getByText(/Centro de operaciones.*En vivo/)).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Detalle del vehículo seleccionado' }),
+  ).toContainText('19.44000');
   await page.getByRole('link', { name: 'Inventario', exact: true }).click();
   await page
     .getByRole('button', { name: 'Nuevo almacén', exact: true })

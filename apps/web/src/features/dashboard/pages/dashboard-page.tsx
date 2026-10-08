@@ -53,6 +53,13 @@ export function DashboardPage() {
         />
       ) : (
         <>
+          {summary.data.includesDemonstrationData && (
+            <p className="panel-note" role="note">
+              Incluye datos de DEMOSTRACIÓN LGD-V1-. Son vehículos, envíos y
+              existencias ficticios; las métricas agregan todos los registros de
+              esta base.
+            </p>
+          )}
           <div className="data-caption">
             <Activity size={14} aria-hidden="true" />
             <span>

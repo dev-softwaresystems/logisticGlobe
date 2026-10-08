@@ -8,6 +8,7 @@ export interface InventoryAlertSummary {
   createdAt: string;
 }
 export interface DashboardSummary {
+  includesDemonstrationData?: boolean;
   dailyActiveComparison?: DailyActiveComparison;
   shipmentPeriodComparison?: {
     currentCreated: number;

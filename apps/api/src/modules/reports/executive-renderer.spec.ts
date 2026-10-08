@@ -58,7 +58,12 @@ describe('Executive file content and extended pagination', () => {
       )?.[1],
     ).toBe(8);
     const info = await readSheet(buffer, 1);
-    expect(info[2][1]).toBeInstanceOf(Date);
+    expect(info.find((row) => row[0] === 'Generación UTC')?.[1]).toBeInstanceOf(
+      Date,
+    );
+    expect(info.find((row) => row[0] === 'Clasificación')?.[1]).toContain(
+      'Registros de la base consultada',
+    );
   });
   it('renders long tables into a genuine PDF for optional visual QA', async () => {
     const buffer = await executivePdf(data);

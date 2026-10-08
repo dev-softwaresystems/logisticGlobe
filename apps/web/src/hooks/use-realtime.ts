@@ -5,7 +5,12 @@ import type { LogisticsEvent, Page, Vehicle } from '@logistics-globe/shared';
 const keys: Record<LogisticsEvent['name'], string[]> = {
   'route.plan.updated': ['route-plans', 'route-incidents'],
   'route.incident.updated': ['route-incidents'],
-  'fleet.position.updated': ['positions', 'route-plans', 'route-incidents'],
+  'fleet.position.updated': [
+    'fleet',
+    'positions',
+    'route-plans',
+    'route-incidents',
+  ],
   'fleet.vehicle.updated': ['fleet', 'dashboard'],
   'shipment.status.updated': ['shipments', 'shipment', 'dashboard', 'fleet'],
   'inventory.threshold.breached': [
@@ -40,27 +45,30 @@ export function useRealtime() {
           client.setQueriesData<Page<Vehicle>>(
             { queryKey: ['fleet'] },
             (previous) =>
-              previous && {
-                ...previous,
-                items: previous.items.map((vehicle) => {
-                  if (
-                    vehicle.id !== payload.vehicleId ||
-                    (vehicle.position &&
-                      (vehicle.position.observedAt > payload.observedAt ||
-                        (vehicle.position.observedAt === payload.observedAt &&
-                          vehicle.position.id >= event.id)))
-                  )
-                    return vehicle;
-                  return {
-                    ...vehicle,
-                    position: {
-                      ...payload,
-                      id: event.id,
-                      receivedAt: event.occurredAt,
-                    },
-                  };
-                }),
-              },
+              previous && Array.isArray(previous.items)
+                ? {
+                    ...previous,
+                    items: previous.items.map((vehicle) => {
+                      if (
+                        vehicle.id !== payload.vehicleId ||
+                        (vehicle.position &&
+                          (vehicle.position.observedAt > payload.observedAt ||
+                            (vehicle.position.observedAt ===
+                              payload.observedAt &&
+                              vehicle.position.id >= event.id)))
+                      )
+                        return vehicle;
+                      return {
+                        ...vehicle,
+                        position: {
+                          ...payload,
+                          id: event.id,
+                          receivedAt: event.occurredAt,
+                        },
+                      };
+                    }),
+                  }
+                : previous,
           );
         }
         keys[event.name]?.forEach((key) => dirty.add(key));

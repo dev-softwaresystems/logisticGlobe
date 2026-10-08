@@ -1,5 +1,13 @@
 # Verificación local de LogisticsGlobe
 
+## Mapa y demostración — ejecución actual del 7 de octubre de 2026
+
+Base 28386e0b8de3a5a1b3a333f28dd89e1c7ce47d86, cambios sin commit. [Evidencia actual](testing/demo-verification.md) y [guía](demo/local-demonstration.md): 20 vehículos, 80 envíos, cuatro almacenes, 24 artículos, 18 posiciones simuladas; namespace separado e idempotente, trazabilidad y recuperación GPS, formulario manual y presentación móvil.
+
+59 unitarias aprobadas (repetición final con un worker), 45 de integración y seis casos de navegador; revisión adicional de nueve pantallas en dos viewports, sin errores JS ni overflow. Build nativo, lint y tipos correctos. Mapa local de coordenadas verificado; cartografía externa, routing vial real y dispositivos físicos pendientes.
+
+El preview actual en 18080 utiliza SPA compilada y API nativas; los motores Docker están saludables. La reconstrucción Linux se interrumpió por presión de memoria y queda pendiente. Las imágenes, SBOM y paquete del cierre anterior documentado debajo corresponden a aquella revisión y no incluyen estos cambios. No hubo despliegues remotos, transferencias, commits ni pushes.
+
 ## Cierre local del 7 de octubre de 2026
 
 Node 24.11.1, pnpm 10.24.0, Windows y motores Docker locales. Revisión 6c34aef3bde6c8d344d437f199edf49944181e0f con cambios sin commit. El historial del 4 de octubre se conserva debajo; sus bloqueos de imágenes fueron superados en esta ejecución.

@@ -43,6 +43,9 @@ export async function sendPosition(data: {
   longitude: number;
   observedAt: string;
   id: string;
+  accuracyMeters?: number;
+  speedKph?: number;
+  headingDegrees?: number;
 }): Promise<Position> {
   const { vehicleId, ...body } = data;
   return (
@@ -51,4 +54,8 @@ export async function sendPosition(data: {
       body,
     )
   ).data;
+}
+
+export async function getVehicle(id: string): Promise<Vehicle> {
+  return (await http.get<Vehicle>('/fleet/vehicles/' + id)).data;
 }

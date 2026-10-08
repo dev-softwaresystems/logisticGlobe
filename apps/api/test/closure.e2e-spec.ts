@@ -483,7 +483,9 @@ describe('Integral closure against isolated persistence', () => {
     ]);
     expect(typeof metrics[1][1]).toBe('number');
     const info = await readSheet(xlsx.body as Buffer, 1);
-    expect(info[2][1]).toBeInstanceOf(Date);
+    expect(info.find((row) => row[0] === 'Generación UTC')?.[1]).toBeInstanceOf(
+      Date,
+    );
     await api()
       .get('/api/v1/reports/dashboard.xlsx')
       .query({

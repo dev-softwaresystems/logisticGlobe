@@ -53,7 +53,7 @@ describe('Dashboard integration', () => {
     expect(screen.getByText('33.2%')).toBeInTheDocument();
     expect(screen.getByText('Sin alertas recientes')).toBeInTheDocument();
     expect(
-      await screen.findByText('Sin telemetría conectada'),
+      await screen.findByText('Sin posiciones recibidas'),
     ).toBeInTheDocument();
   });
   it('shows a loading state while waiting for the API', () => {

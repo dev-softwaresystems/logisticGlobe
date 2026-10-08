@@ -1,3 +1,4 @@
+import type { VehicleStatus } from '@logistics-globe/shared';
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { FleetMap } from '../components/fleet-map';
@@ -13,12 +14,13 @@ import {
   LoadingState,
 } from '../../../components/ui/query-state';
 export function FleetPage() {
+  const [status, setStatus] = useState<VehicleStatus | ''>('');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState('');
   const query = useQuery({
-    queryKey: ['fleet', page, search],
-    queryFn: () => listVehicles({ page, search }),
+    queryKey: ['fleet', page, search, status],
+    queryFn: () => listVehicles({ page, search, status: status || undefined }),
     refetchInterval: 15000,
   });
   const canWrite = usePermission([
@@ -50,9 +52,29 @@ export function FleetPage() {
         </div>
       </div>
       <section className="panel">
-        <FleetMap />
+        <FleetMap
+          search={search}
+          status={status || undefined}
+          selectedId={selected}
+          onSelect={setSelected}
+        />
       </section>
       <div className="filters">
+        <label>
+          Estado de flota
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as VehicleStatus | '');
+              setPage(1);
+            }}
+          >
+            <option value="">Todos</option>
+            <option value="AVAILABLE">Disponible</option>
+            <option value="ON_ROUTE">En ruta</option>
+            <option value="MAINTENANCE">Mantenimiento</option>
+          </select>
+        </label>
         <label>
           Buscar matrícula
           <input

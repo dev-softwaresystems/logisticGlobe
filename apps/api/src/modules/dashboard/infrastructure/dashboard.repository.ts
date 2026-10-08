@@ -68,6 +68,9 @@ export async function readDashboard(
       where: { createdAt: { gte: previousFrom, lt: currentFrom } },
     }),
   ]);
+  const demoShipments = await tx.shipment.count({
+    where: { reference: { startsWith: 'LGD-V1-' } },
+  });
   const cuts = dailyCuts(now, timeZone);
   if (capture)
     await tx.$executeRaw`INSERT INTO "DashboardSnapshot" ("id","timeZone","cutAt","observedAt","active") VALUES (${randomUUID()},${timeZone},${cuts.current},${now},${activeShipments}) ON CONFLICT ("timeZone","cutAt") DO NOTHING`;
@@ -85,6 +88,7 @@ export async function readDashboard(
     cuts,
   );
   return {
+    includesDemonstrationData: demoShipments > 0,
     shipmentPeriodComparison:
       oldestShipment && oldestShipment.createdAt <= previousFrom
         ? {

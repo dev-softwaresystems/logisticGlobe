@@ -23,3 +23,11 @@ Eventos tipados nuevos: route.plan.updated y route.incident.updated. Los consumi
 Dashboard dailyActiveComparison: metric, basis, timeZone, cortes UTC, valores actual/anterior, diferencia, porcentaje, fechas observadas y razón N/D. La comparación anterior es nula sin histórico homólogo, con DST ambiguo o inexistente; solo el porcentaje es nulo ante base cero. shipmentPeriodComparison conserva los envíos creados entre semanas distintas.
 
 Referencia ERP: [contrato de stock](../integrations/erp-wms-contract.md). Salud: operational, degraded, unavailable, not-configured y unknown con motivo seguro y fecha de sonda. Swagger de desarrollo documenta DTOs; permanece deshabilitado en producción.
+
+## Observaciones GPS y datos de demostración
+
+Position agrega opcionalmente source (manual/device/simulated), speedKph (0..200), headingDegrees (0..359.999) y accuracyMeters (0..10000). POST /fleet/vehicles/:id/positions conserva los roles de escritura. El servidor asigna source=manual y actor interno; simulated=true está reservado a demostración autenticada fuera de producción. POST /integrations/gps/positions sigue exigiendo token privado y scope de vehículos, asigna device y rechaza simulated. Nunca se devuelve actorId GPS ni tokens privados.
+
+Repetir UUID y contenido devuelve la observación existente; cambiar campos opcionales o procedencia/actor de una observación ya identificada devuelve 409. Históricos anteriores sin procedencia permanecen sin identificar y admiten replay compatible, sin inventar origen. Últimas posiciones y eventos conservan los campos públicos.
+
+Vehicle agrega capacityKg opcional y assignedShipments con ID/referencia de envíos PENDING/IN_TRANSIT. Las colecciones tienen telemetryStatus; un detalle no tiene items. DashboardSummary incluye includesDemonstrationData calculado desde registros LGD-V1-. PDF/XLSX comunican esta clasificación sin presentar la demo como operación física.

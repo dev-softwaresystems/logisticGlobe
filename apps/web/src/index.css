@@ -84,3 +84,45 @@ h3 {
   white-space: nowrap;
   border: 0;
 }
+.map-controls {
+  align-items: end;
+  padding: 0 18px 16px;
+}
+.map-controls label {
+  min-width: 0;
+  flex: 1;
+}
+.map-controls select {
+  max-width: 100%;
+}
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 0.8rem;
+  color: #4d5961;
+}
+.position-details {
+  overflow-wrap: anywhere;
+  padding: 12px 0;
+}
+.position-details small {
+  display: block;
+  color: #53616a;
+}
+.position-details p {
+  margin: 6px 0;
+}
+.leaflet-popup-content {
+  max-width: 230px;
+}
+@media (max-width: 600px) {
+  .map-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters.map-controls label {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+}

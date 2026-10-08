@@ -6,12 +6,13 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
-import type { Position } from '@logistics-globe/shared';
+import type { Position, PositionSource } from '@logistics-globe/shared';
 import { MongoService } from '../../infrastructure/database/mongo.service.js';
 import { RedisService } from '../../infrastructure/cache/redis.service.js';
 import type { PositionDto, PositionQuery } from '../fleet.dto.js';
 interface TelemetryDocument extends Position {
   _id: string;
+  actorId?: string;
   monitoringPending?: boolean;
   accuracyMeters?: number;
 }
@@ -50,6 +51,9 @@ export class TelemetryRepository implements OnModuleInit {
   }
   private publicPosition(doc: TelemetryDocument): Position {
     return {
+      source: doc.source,
+      speedKph: doc.speedKph,
+      headingDegrees: doc.headingDegrees,
       id: doc.id,
       vehicleId: doc.vehicleId,
       latitude: doc.latitude,
@@ -61,13 +65,22 @@ export class TelemetryRepository implements OnModuleInit {
         : { accuracyMeters: doc.accuracyMeters }),
     };
   }
-  async save(vehicleId: string, dto: PositionDto) {
+  async save(
+    vehicleId: string,
+    dto: PositionDto,
+    origin?: { source: PositionSource; actorId?: string },
+  ) {
     await this.ensureIndexes();
     const observedAt = new Date(dto.observedAt).toISOString();
     if (new Date(observedAt).getTime() > Date.now() + 60000)
       throw new BadRequestException('Observation is in the future');
     const collection = await this.collection();
     const document: TelemetryDocument = {
+      ...origin,
+      ...(dto.speedKph === undefined ? {} : { speedKph: dto.speedKph }),
+      ...(dto.headingDegrees === undefined
+        ? {}
+        : { headingDegrees: dto.headingDegrees }),
       id: dto.id,
       latitude: dto.latitude,
       longitude: dto.longitude,
@@ -93,7 +106,11 @@ export class TelemetryRepository implements OnModuleInit {
         existing.latitude !== dto.latitude ||
         existing.longitude !== dto.longitude ||
         existing.observedAt !== observedAt ||
-        existing.accuracyMeters !== dto.accuracyMeters
+        existing.accuracyMeters !== dto.accuracyMeters ||
+        (existing.speedKph ?? undefined) !== dto.speedKph ||
+        (existing.headingDegrees ?? undefined) !== dto.headingDegrees ||
+        (existing.source !== undefined && existing.source !== origin?.source) ||
+        (existing.actorId !== undefined && existing.actorId !== origin?.actorId)
       )
         throw new ConflictException(
           'Observation ID already used with different data',

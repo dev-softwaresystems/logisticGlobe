@@ -28,6 +28,12 @@ export function reportSections(
       headers: ['Concepto', 'Valor'],
       rows: [
         ['Producto', 'LogisticsGlobe · Software Systems'],
+        [
+          'Clasificación',
+          data.summary.includesDemonstrationData
+            ? 'Incluye datos ficticios de DEMOSTRACIÓN LGD-V1-; no representa operación física validada'
+            : 'Registros de la base consultada; procedencia a validar por el operador',
+        ],
         ['Generación UTC', new Date(data.generatedAt)],
         ['Zona operativa', data.timeZone],
         ['Periodo desde UTC', new Date(data.period.from)],

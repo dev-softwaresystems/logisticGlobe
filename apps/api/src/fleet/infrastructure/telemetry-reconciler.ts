@@ -23,6 +23,10 @@ export class TelemetryReconciler implements OnModuleInit, OnModuleDestroy {
       name: 'fleet.position.updated',
       occurredAt: position.receivedAt,
       payload: {
+        source: position.source,
+        accuracyMeters: position.accuracyMeters,
+        speedKph: position.speedKph,
+        headingDegrees: position.headingDegrees,
         vehicleId: position.vehicleId,
         latitude: position.latitude,
         longitude: position.longitude,

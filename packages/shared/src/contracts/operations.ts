@@ -30,7 +30,11 @@ export interface CreateShipment {
   priority: ShipmentPriority;
   vehicleId?: string;
 }
+export type PositionSource = 'manual' | 'device' | 'simulated';
 export interface Position {
+  source?: PositionSource;
+  speedKph?: number;
+  headingDegrees?: number;
   accuracyMeters?: number;
   id: string;
   vehicleId: string;
@@ -40,6 +44,8 @@ export interface Position {
   receivedAt: string;
 }
 export interface Vehicle {
+  capacityKg?: number | null;
+  assignedShipments?: { id: string; reference: string }[];
   id: string;
   plate: string;
   status: VehicleStatus;

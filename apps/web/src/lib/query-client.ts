@@ -1,6 +1,8 @@
+import { mergeFleetPages } from '../features/fleet/position-state';
 import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30000, retry: 1, refetchOnWindowFocus: true },
   },
 });
+queryClient.setQueryDefaults(['fleet'], { structuralSharing: mergeFleetPages });

@@ -96,6 +96,7 @@ model ShipmentStatusHistory {
 }
 
 model Vehicle {
+  capacityKg Int?
   id         String        @id @default(uuid())
   plate      String        @unique
   status     VehicleStatus @default(AVAILABLE)

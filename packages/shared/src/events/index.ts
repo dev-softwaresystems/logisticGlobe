@@ -1,4 +1,8 @@
-import type { ShipmentStatus, VehicleStatus } from '../contracts/operations.js';
+import type {
+  PositionSource,
+  ShipmentStatus,
+  VehicleStatus,
+} from '../contracts/operations.js';
 export interface LogisticsEventPayloads {
   'route.plan.updated': { planId: string; vehicleId: string; version: number };
   'route.incident.updated': {
@@ -8,6 +12,10 @@ export interface LogisticsEventPayloads {
     resolved: boolean;
   };
   'fleet.position.updated': {
+    source?: PositionSource;
+    accuracyMeters?: number;
+    speedKph?: number;
+    headingDegrees?: number;
     vehicleId: string;
     latitude: number;
     longitude: number;

@@ -75,8 +75,12 @@ class IntegrationsController {
         .includes(dto.vehicleId)
     )
       throw new ForbiddenException('Vehicle outside integration scope');
+    if (dto.simulated)
+      throw new ForbiddenException(
+        'Use the authorized local fleet workflow for simulation',
+      );
     const { vehicleId, ...position } = dto;
-    return this.fleet.position(vehicleId, position);
+    return this.fleet.position(vehicleId, position, { source: 'device' });
   }
 }
 @Module({

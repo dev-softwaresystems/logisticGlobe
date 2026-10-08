@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../infrastructure/database/prisma.service.js';
-import type { EventBus } from '@logistics-globe/shared';
+import type { EventBus, PositionSource } from '@logistics-globe/shared';
 import { EVENT_BUS } from '../infrastructure/messaging/event-bus.js';
 import { recordEvent } from '../infrastructure/messaging/outbox.js';
 import { serializable } from '../common/transaction.js';
@@ -41,6 +41,12 @@ export class FleetService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.vehicle.findMany({
         where,
+        include: {
+          shipments: {
+            where: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
+            select: { id: true, reference: true },
+          },
+        },
         orderBy: { plate: 'asc' },
         take: query.pageSize,
         skip: (query.page - 1) * query.pageSize,
@@ -51,6 +57,8 @@ export class FleetService {
     const withPositions = await Promise.all(
       items.map(async (vehicle) => ({
         ...vehicle,
+        assignedShipments: vehicle.shipments,
+        shipments: undefined,
         position: await this.telemetry.latest(vehicle.id).catch(() => {
           telemetryAvailable = false;
           return null;
@@ -66,17 +74,29 @@ export class FleetService {
     };
   }
   async detail(id: string) {
-    const vehicle = await this.prisma.vehicle.findUnique({ where: { id } });
+    const vehicle = await this.prisma.vehicle.findUnique({
+      where: { id },
+      include: {
+        shipments: {
+          where: { status: { in: ['PENDING', 'IN_TRANSIT'] } },
+          select: { id: true, reference: true },
+        },
+      },
+    });
     if (!vehicle) throw new NotFoundException('Vehicle not found');
     return {
       ...vehicle,
+      assignedShipments: vehicle.shipments,
+      shipments: undefined,
       position: await this.telemetry.latest(id).catch(() => null),
     };
   }
   async create(dto: CreateVehicleDto, actorId: string) {
     try {
       return await serializable(this.prisma, async (tx) => {
-        const vehicle = await tx.vehicle.create({ data: { plate: dto.plate } });
+        const vehicle = await tx.vehicle.create({
+          data: { plate: dto.plate, capacityKg: dto.capacityKg },
+        });
         await recordEvent(
           tx,
           'fleet.vehicle.updated',
@@ -125,7 +145,11 @@ export class FleetService {
       return updated;
     });
   }
-  async position(id: string, dto: PositionDto) {
+  async position(
+    id: string,
+    dto: PositionDto,
+    origin?: { source: PositionSource; actorId?: string },
+  ) {
     if (
       !(await this.prisma.vehicle.findUnique({
         where: { id },
@@ -135,7 +159,7 @@ export class FleetService {
       throw new NotFoundException('Vehicle not found');
     let result;
     try {
-      result = await this.telemetry.save(id, dto);
+      result = await this.telemetry.save(id, dto, origin);
     } catch (error) {
       if (
         error instanceof ConflictException ||
